@@ -12,7 +12,7 @@ end
 
 Vagrant.configure("2") do |config|
   config.vm.box = "ubuntu/jammy64"
-  # config.ssh.insert_key = false
+  config.ssh.insert_key = false
 
   config.vm.synced_folder ".", "/vagrant", disabled: true
   config.vm.synced_folder "./synced", "/host_synced"
@@ -42,7 +42,8 @@ Vagrant.configure("2") do |config|
     #   k3sserver.vm.network "public_network", bridge: public_network_bridge
     # end
 
-    k3sserver.vm.provision "shell", path: "provision_server.sh"
+    k3sserver.vm.provision "shell", path: "./provision/common.sh"
+    k3sserver.vm.provision "shell", path: "./provision/server.sh"
 
     k3sserver.vm.provider "virtualbox" do |sv_vb|
       sv_vb.name = "k3s-server"
@@ -62,7 +63,8 @@ Vagrant.configure("2") do |config|
     #   k3sagent.vm.network "public_network", bridge: public_network_bridge
     # end
 
-    k3sagent.vm.provision "shell", path: "provision_agent.sh"
+    k3sagent.vm.provision "shell", path: "./provision/common.sh"
+    k3sagent.vm.provision "shell", path: "./provision/agent.sh"
 
     k3sagent.vm.provider "virtualbox" do |ag_vb|
       ag_vb.name = "k3s-agent"
