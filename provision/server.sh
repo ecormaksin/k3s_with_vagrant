@@ -7,4 +7,4 @@ cat "${SINK_FILE_PATH}" | grep "${TARGET_STRING}" >/dev/null
 GREP_RESULT=$?
 [ $GREP_RESULT -ne 0 ] && echo "${TARGET_STRING}" >> "${SINK_FILE_PATH}"
 
-curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --node-ip 10.0.2.101 --node-external-ip 10.0.2.101 --token mysecret" sh -
+curl -sfL https://get.k3s.io | K3S_TOKEN=mysecret sh -s -

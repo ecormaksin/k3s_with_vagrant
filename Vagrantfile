@@ -2,7 +2,7 @@
 # vi: set ft=ruby :
 
 # パブリックネットワーク（ブリッジアダプター）の名前を環境変数で設定している場合に、プロンプトを不要にする。
-# 設定値は「vboxmanage list bridgedifs」で出力される「Name」プロパティ
+# 設定値は「 vboxmanage list bridgedifs 」で出力される「Name」プロパティ
 # Powershellで指定する場合の例: $env:VAGRANT_PUBLIC_NETWORK_BRIDGE="<bridge_if_name>";
 # 永続的に環境変数を指定する場合: [System.Environment]::SetEnvironmentVariable('VAGRANT_PUBLIC_NETWORK_BRIDGE', '<bridge_if_name>', [System.EnvironmentVariableTarget]::User)
 public_network_bridge = ENV["VAGRANT_PUBLIC_NETWORK_BRIDGE"]
@@ -10,9 +10,19 @@ if public_network_bridge.nil? then
   public_network_bridge = ""
 end
 
+k3s_server_public_ip_address = ENV["VAGRANT_K3S_SERVER_PUBLIC_IP_ADDRESS"]
+if k3s_server_public_ip_address.nil? then
+  k3s_server_public_ip_address = ""
+end
+
+k3s_agent_public_ip_address = ENV["VAGRANT_K3S_AGENT_PUBLIC_IP_ADDRESS"]
+if k3s_agent_public_ip_address.nil? then
+  k3s_agent_public_ip_address = ""
+end
+
 Vagrant.configure("2") do |config|
   config.vm.box = "ubuntu/jammy64"
-  config.ssh.insert_key = false
+  # config.ssh.insert_key = false
 
   config.vm.synced_folder ".", "/vagrant", disabled: true
   config.vm.synced_folder "./synced", "/host_synced"
@@ -36,11 +46,19 @@ Vagrant.configure("2") do |config|
     k3sserver.vm.network "forwarded_port", guest: 22, host: 50021, id: "ssh"
     k3sserver.vm.network "private_network", ip: "10.0.2.101"
 
-    # if public_network_bridge.empty? then
-    #   k3sserver.vm.network "public_network"
-    # else
-    #   k3sserver.vm.network "public_network", bridge: public_network_bridge
-    # end
+    if public_network_bridge.empty? then
+      if k3s_server_public_ip_address.empty? then
+        k3sserver.vm.network "public_network"
+      else
+        k3sserver.vm.network "public_network", ip: k3s_server_public_ip_address
+      end
+    else
+      if k3s_server_public_ip_address.empty? then
+        k3sserver.vm.network "public_network", bridge: public_network_bridge
+      else
+        k3sserver.vm.network "public_network", bridge: public_network_bridge, ip: k3s_server_public_ip_address
+      end
+    end
 
     k3sserver.vm.provision "shell", path: "./provision/common.sh"
     k3sserver.vm.provision "shell", path: "./provision/server.sh"
@@ -57,11 +75,19 @@ Vagrant.configure("2") do |config|
     k3sagent.vm.network "forwarded_port", guest: 22, host: 50022, id: "ssh"
     k3sagent.vm.network "private_network", ip: "10.0.2.102"
 
-    # if public_network_bridge.empty? then
-    #   k3sagent.vm.network "public_network"
-    # else
-    #   k3sagent.vm.network "public_network", bridge: public_network_bridge
-    # end
+    if public_network_bridge.empty? then
+      if k3s_agent_public_ip_address.empty? then
+        k3sagent.vm.network "public_network"
+      else
+        k3sagent.vm.network "public_network", ip: k3s_agent_public_ip_address
+      end
+    else
+      if k3s_agent_public_ip_address.empty? then
+        k3sagent.vm.network "public_network", bridge: public_network_bridge
+      else
+        k3sagent.vm.network "public_network", bridge: public_network_bridge, ip: k3s_agent_public_ip_address
+      end
+    end
 
     k3sagent.vm.provision "shell", path: "./provision/common.sh"
     k3sagent.vm.provision "shell", path: "./provision/agent.sh"
